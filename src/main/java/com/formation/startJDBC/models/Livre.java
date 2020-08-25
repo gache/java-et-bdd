@@ -1,4 +1,4 @@
-package com.formation.startJDBC;
+package com.formation.startJDBC.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

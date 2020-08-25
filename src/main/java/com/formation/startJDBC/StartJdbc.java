@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.util.Optional;
 import java.util.Properties;
 
+import com.formation.startJDBC.models.Livre;
+
 public class StartJdbc {
 
 	public static Optional<Livre> findByID(String isbn) {
