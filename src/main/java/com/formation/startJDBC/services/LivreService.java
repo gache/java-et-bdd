@@ -1,23 +1,53 @@
 package com.formation.startJDBC.services;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
+import com.formation.startJDBC.dao.ConnectionMysql;
 import com.formation.startJDBC.models.Livre;
 import com.formation.startJDBC.repositories.LivreRepository;
 
 public class LivreService implements LivreRepository {
 
 	@Override
-	public Collection<Livre> findAll() {
+	public Optional<Collection<Livre>> findAll() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Livre findByID(String id) {
-		// TODO Auto-generated method stub
-		return null;
+	public Optional<Livre> findByID(String id) {
+		Livre livre = null;
+
+		try (Connection c = ConnectionMysql.getInstance()) {
+			String query = "select * from livre where isbn = ?";
+			try (PreparedStatement st = c.prepareStatement(query)) {
+				st.setString(1, id);
+				try (ResultSet res = st.executeQuery()) {
+					while (res.next()) {
+						
+						livre = new Livre();
+						livre.setIsbn(res.getString("isbn"));
+						livre.setTitre(res.getString("titre"));
+						livre.setAuteur_Nom(res.getString("auteur_nom"));
+						livre.setAuteur_Prenom(res.getString("auteur_prenom"));
+						livre.setEditeur(res.getString("editeur"));
+						livre.setAnnee(res.getInt("annee"));
+						
+					}
+				}
+			} catch (SQLException s) {
+				s.printStackTrace();
+			}
+		} catch (SQLException s) {
+			s.printStackTrace();
+		}
+		return Optional.ofNullable(livre);
 	}
 
 	@Override
@@ -39,7 +69,7 @@ public class LivreService implements LivreRepository {
 	}
 
 	@Override
-	public List<Livre> findByTitle(String titre) {
+	public Optional<List<Livre>> findByTitle(String titre) {
 		// TODO Auto-generated method stub
 		return null;
 	}

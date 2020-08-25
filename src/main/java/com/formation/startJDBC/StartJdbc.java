@@ -14,36 +14,6 @@ import com.formation.startJDBC.models.Livre;
 
 public class StartJdbc {
 
-	public static Optional<Livre> findByID(String isbn) {
-		Optional<Connection> conn = getConnection();
-		Livre livre = null;
-		if (conn.isPresent()) {
-			try (Connection c = conn.get()) {
-				String query = "select * from livre where isbn = ?";
-				try (PreparedStatement st = c.prepareStatement(query)) {
-					st.setString(1, isbn);
-					try (ResultSet res = st.executeQuery()) {
-						while (res.next()) {
-							livre = new Livre();
-							livre.setIsbn(res.getString("isbn"));
-							livre.setTitre(res.getString("titre"));
-							livre.setAuteur_Nom(res.getString("auteur_nom"));
-							livre.setAuteur_Prenom(res.getString("auteur_prenom"));
-							livre.setEditeur(res.getString("editeur"));
-							livre.setAnnee(res.getInt("annee"));
-							return Optional.ofNullable(livre);
-						}
-					}
-				} catch (SQLException s) {
-					s.printStackTrace();
-				}
-			} catch (SQLException s) {
-				s.printStackTrace();
-			}
-		}
-		return Optional.ofNullable(livre);
-	}
-
 	public static int deleteByID(String isbn) {
 		Optional<Connection> conn = getConnection();
 		if (conn.isPresent()) {
