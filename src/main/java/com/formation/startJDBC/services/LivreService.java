@@ -18,14 +18,12 @@ public class LivreService implements LivreRepository {
 
 	@Override
 	public Optional<List<Livre>> findByTitle(String titre) {
-		List<Livre> livres = null;
+		List<Livre> livres = new ArrayList<>();
 		String query = "select * from livre where titre = ?";
 		try (PreparedStatement st = connection.prepareStatement(query)) {
 			st.setString(1, titre);
 			try (ResultSet res = st.executeQuery()) {
-				if (res.getRow() > 0) {
-					livres = new ArrayList<>();
-				}
+				
 				Livre livre = null;
 				while (res.next()) {
 					livre = new Livre();
@@ -38,10 +36,11 @@ public class LivreService implements LivreRepository {
 					livres.add(livre);
 				}
 			}
+			return Optional.ofNullable(livres);
 		} catch (SQLException s) {
 			s.printStackTrace();
 		}
-		return Optional.ofNullable(livres);
+		return Optional.empty();
 	}
 
 	@Override
