@@ -7,78 +7,123 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.Properties;
 
 public class StartJdbc {
 
-	public static void main(String[] args) {
-
+	public static Optional<Connection> getConnection() {
 		Properties props = new Properties();
-
 		try (FileInputStream fis = new FileInputStream("conf.properties")) {
 			props.load(fis);
-
 		} catch (IOException ioException) {
 			ioException.printStackTrace();
 		}
-
 		String driver = props.getProperty("jdbc.driver.class");
 		String url = props.getProperty("jdbc.url");
 		String login = props.getProperty("jdbc.login");
 		String password = props.getProperty("jdbc.password");
-
 		try {
 			Class.forName(driver);
 		} catch (ClassNotFoundException e) {
-
 			e.printStackTrace();
 		}
-
+		Connection connection = null;
 		try {
-			Connection connection = DriverManager.getConnection(url, login, password);
-
-			String query = "select * from livre where isbn = ?";
-			try (PreparedStatement st = connection.prepareStatement(query)) {
-				st.setString(1, "978-2-07-508255-6");
-				ResultSet res = st.executeQuery();
-				
-			while(res.next()) {
-				//	System.out.println(res.getString(2)); // j'appelle par la colomne
-				// System.out.println(res.getString("titre")); // j'appelle par titre de  colomne
-//					System.out.printf("l'isbn: %s, titre: %s, nom de l'auteur: %s, prénom de l'auteur: %s, l'éditeur: %s, l'année: %d\n",
-//                            res.getString("isbn"),
-//                            res.getString("titre"),
-//                            res.getString("auteur_nom"),
-//                            res.getString("auteur_prenom"),
-//                            res.getString("editeur"),
-//                            res.getInt("annee")
-//                            );
-				}
-			}
-			query = "INSERT into livre values(?,?,?,?,?,?)";
-			try(PreparedStatement st = connection.prepareStatement(query)) {
-				st.setString(1, "978-2070368228");
-				st.setString(2, "1984");
-				st.setString(3, "george");
-				st.setString(4, "orwell");
-				st.setString(5, "Gallimard");
-				st.setInt(6, 1972);
-				
-//				int nb = st.executeUpdate();
-//				System.out.printf("%d lignes(s) update\n", nb);
-			}
-			
-			query = "DELETE from livre where isbn = ?";
-            try (PreparedStatement st = connection.prepareStatement(query) ){
-                st.setString(1, "978-2070368228");
-                int nb = st.executeUpdate();
-                System.out.printf("%d ligne(s) update\n", nb);
-            }
-            connection.close();
-
-		} catch (SQLException e) {
-			e.printStackTrace();
+			connection = DriverManager.getConnection(url, login, password);
+		} catch (SQLException throwables) {
+			throwables.printStackTrace();
 		}
+		return Optional.ofNullable(connection);
+	}
+
+	public static Optional<Livre> findByID(String isbn) {
+		Optional<Connection> conn = getConnection();
+		Livre livre = null;
+		if (conn.isPresent()) {
+			try (Connection c = conn.get()) {
+				String query = "select * from livre where isbn = ?";
+				try (PreparedStatement st = c.prepareStatement(query)) {
+					st.setString(1, isbn);
+					try (ResultSet res = st.executeQuery()) {
+						while (res.next()) {
+							livre = new Livre();
+							livre.setIsbn(res.getString("isbn"));
+							livre.setTitre(res.getString("titre"));
+							livre.setAuteur_Nom(res.getString("auteur_nom"));
+							livre.setAuteur_Prenom(res.getString("auteur_prenom"));
+							livre.setEditeur(res.getString("editeur"));
+							livre.setAnnee(res.getInt("annee"));
+							return Optional.ofNullable(livre);
+						}
+					}
+				} catch (SQLException s) {
+					s.printStackTrace();
+				}
+			} catch (SQLException s) {
+				s.printStackTrace();
+			}
+		}
+		return Optional.ofNullable(livre);
+	}
+
+	public static int deleteByID(String isbn) {
+		Optional<Connection> conn = getConnection();
+		if (conn.isPresent()) {
+			try (Connection c = conn.get()) {
+				String query = "DELETE from livre where isbn = ?";
+				try (PreparedStatement st = c.prepareStatement(query)) {
+					st.setString(1, isbn);
+					return st.executeUpdate();
+				}
+			} catch (SQLException s) {
+				s.printStackTrace();
+			}
+		}
+		return 0;
+	}
+
+	public static int add(Livre livre) {
+		Optional<Connection> conn = getConnection();
+
+		if (conn.isPresent()) {
+			try (Connection c = conn.get()) {
+				String query = "INSERT into livre values(?,?,?,?,?,?)";
+				try (PreparedStatement st = c.prepareStatement(query)) {
+					st.setString(1, livre.getIsbn());
+					st.setString(2, livre.getTitre());
+					st.setString(3, livre.getAuteur_Nom());
+					st.setString(4, livre.getAuteur_Prenom());
+					st.setString(5, livre.getEditeur());
+					st.setInt(6, livre.getAnnee());
+
+					return st.executeUpdate();
+
+				}
+
+			} catch (SQLException s) {
+				s.printStackTrace();
+			}
+		}
+
+		return 0;
+	}
+
+	public static void main(String[] args) {
+
+		Livre livre = new Livre(" 978-2070368228", " 1984", "george", "orwell", "Gallimard", 1972);
+
+		int nb = add(livre);
+		System.out.println(nb + "row(s) insert");
+
+		Optional<Livre> livre1 = findByID(livre.getIsbn());
+		if (livre1.isPresent()) {
+			System.out.println(livre1.get());
+		}
+
+		nb = deleteByID(livre.getIsbn());
+		System.out.println(nb + "row(s) delete");
+
 	}
 
 }
