@@ -64,7 +64,15 @@ public class LivreService implements LivreRepository {
 
 	@Override
 	public int deleteByID(String id) {
-		// TODO Auto-generated method stub
+		try (Connection c = ConnectionMysql.getInstance()) {
+			String query = "DELETE from livre where isbn = ?";
+			try (PreparedStatement st = c.prepareStatement(query)) {
+				st.setString(1, id);
+				return st.executeUpdate();
+			}
+		} catch (SQLException s) {
+			s.printStackTrace();
+		}
 		return 0;
 	}
 
